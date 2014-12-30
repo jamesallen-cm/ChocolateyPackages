@@ -1,0 +1,180 @@
+# modules
+Import-Module PSReadLine
+
+# setup PSReadLine options
+Set-PSReadlineOption -EditMode Emacs
+Set-PSReadlineKeyHandler -Key UpArrow   -Function HistorySearchBackward
+Set-PSReadlineKeyHandler -Key DownArrow -Function HistorySearchForward
+
+# Persistent History
+$PSHistoryPath = Join-Path (Split-Path -Path $profile -Parent) 'PS-History.csv'
+
+if (Test-Path -Path $PSHistoryPath) {
+
+Import-Csv -Path $PSHistoryPath | Add-History
+
+}
+
+Register-EngineEvent -SupportEvent PowerShell.Exiting -Action {
+
+Get-History -Count 25 | Export-Csv -Path $PSHistoryPath
+
+}
+
+# functions
+
+# allows you to start a google search from the command line
+# handy for searching for error codes
+function Search-Google {
+    param(
+        [Parameter(ValueFromPipeline=$true)]
+        [string]$query
+    )
+
+    Process {
+        Start "https://www.google.com/search?q=$query"
+    }
+}
+
+# puts a list of files in a directory on the clipboard so you can paste them into
+# a document using ctrl+v
+function Copy-FileNamesToClipboard {
+    # The CmdletBinding() attribute
+    [CmdletBinding()]
+
+    # Define parameters for the PowerShell v2 advanced function
+    param (
+        # Define a mandatory parameter called Path, which will be the path to gather files from
+        [Parameter(Mandatory = $true)]
+        [string] $Path
+    )
+
+    process {
+        # Load the Presentation Core assembly, which contains the System.Windows.Clipboard class
+        [void][Reflection.Assembly]::LoadWithPartialName("PresentationCore");
+
+        # Initialize the text variable to an empty string
+        $text = [string]::Empty;
+
+        # Get a list of files in the specified directory
+        $FileList = Get-ChildItem -Path $Path;
+
+        # For each file in the directory, add the file path and a new line to $text
+        foreach ($File in $FileList) {
+            $text += ("{0}`n" -f $File.FullName);
+        }
+
+        # Set the Clipboard text to the string we just got
+        [System.Windows.Clipboard]::SetText($text);
+    }
+}
+
+function Get-ProgID {
+    #.Synopsis
+    #   Gets all of the ProgIDs registered on a system
+    #.Description
+    #   Gets all ProgIDs registered on the system.  The ProgIDs returned can be used with New-Object -comObject
+    #.Example
+    #   Get-ProgID
+    #.Example
+    #   Get-ProgID | Where-Object { $_.ProgID -like "*Image*" }
+    param()
+    $paths = @("REGISTRY::HKEY_CLASSES_ROOT\CLSID")
+    if ($env:Processor_Architecture -eq "amd64") {
+        $paths+="REGISTRY::HKEY_CLASSES_ROOT\Wow6432Node\CLSID"
+    }
+    Get-ChildItem $paths -include VersionIndependentPROGID -recurse |
+    Select-Object @{
+        Name='ProgID'
+        Expression={$_.GetValue("")}
+    }, @{
+        Name='32Bit'
+        Expression={
+            if ($env:Processor_Architecture -eq "amd64") {
+                $_.PSPath.Contains("Wow6432Node")
+            } else {
+                $true
+            }
+        }
+    }
+}
+
+# allows you to start a new instance of powershell with no user profile active
+function Start-PowerShell {
+    param (
+        [Switch]$NoProfile
+    )
+
+    if($NoProfile) {
+        Start PowerShell -Args -NoProfile
+    } else {
+        Start PowerShell
+    }
+}
+
+# Allows you to map a network share to drive M
+# add your user name where specified
+function Connect-NetworkShare
+{
+  $cred = Get-Credential
+  $net = new-object -ComObject WScript.Network
+  $user = $cred.UserName.split("\") | Select-Object -Last 1
+  $sharePath = "\\somesharepath
+  Write-Host $sharePath
+  $net.MapNetworkDrive("M:", $sharePath, $false, $cred.UserName, $cred.GetNetworkCredential().Password)
+}
+
+# This enables fusion logging. Fusion logging is a very useful tool for debugging
+# failed attempts by the CLR to bind to an assembly at run time. Rather than trying to step through
+# the application in the VS debugger, it is better to turn Fusion on and read the
+# log file results
+Function Enable-Fusion{
+  if(!(test-path HKLM:\SOFTWARE\Microsoft\Fusion\ForceLog))
+  {
+    New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Fusion -Name ForceLog -PropertyType DWord -Value 1
+  }
+  else
+  {
+    Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Fusion -Name ForceLog -Value 1
+  }
+
+  if(!(test-path HKLM:\SOFTWARE\Microsoft\Fusion\LogPath))
+  {
+    New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Fusion -Name LogPath -PropertyType String -Value "C:\FusionLogs"
+  }
+  else
+  {
+    Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Fusion -Name LogPath -Value "C:\FusionLogs"
+  }
+
+}
+
+# This disables fusion logging.
+Function Disable-Fusion{
+  if(!(test-path HKLM:\SOFTWARE\Microsoft\Fusion\ForceLog))
+  {
+    New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Fusion -Name ForceLog -PropertyType DWord -Value 0
+  }
+  else
+  {
+    Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Fusion -Name ForceLog -Value 0
+  }
+
+  if(!(test-path HKLM:\SOFTWARE\Microsoft\Fusion\LogPath))
+  {
+    New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Fusion -Name LogPath -PropertyType String -Value "C:\FusionLogs"
+  }
+  else
+  {
+    Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Fusion -Name LogPath -Value "C:\FusionLogs"
+  }
+}
+
+# allows you to create a list of characters without having to quote every character
+# the following are equivalent:
+# $letters = "a", "b", "c", "d"
+# $letters = ql a b c d
+function ql {$args} # quote list
+
+# aliases
+set-alias npp "${env:ProgramFiles(x86)}\Notepad++\notepad++.exe"

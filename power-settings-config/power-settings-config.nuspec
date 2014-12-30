@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>power-settings-config</id>
+    <version>1.0.0</version>
+    <authors>James Allen</authors>
+    <owners>James Allen</owners>
+    <description>Configures Power Settings to disable sleep while plugged into AC power</description>
+    <tags>Boxstarter</tags>
+  </metadata>
+</package>

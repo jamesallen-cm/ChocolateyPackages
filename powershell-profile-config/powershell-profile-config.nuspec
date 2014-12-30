@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>powershell-profile-config</id>
+    <version>1.0.0</version>
+    <authors>James Allen</authors>
+    <owners>James Allen</owners>
+    <description>Configures Powershell to use PSReadline and sets up some convienient functions and aliases</description>
+    <tags>Boxstarter</tags>
+  </metadata>
+</package>
