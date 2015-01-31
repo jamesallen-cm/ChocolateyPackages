@@ -2,7 +2,7 @@
 Import-Module PSReadLine
 
 # setup PSReadLine options
-Set-PSReadlineOption -EditMode Emacs
+# Set-PSReadlineOption -EditMode Emacs
 Set-PSReadlineKeyHandler -Key UpArrow   -Function HistorySearchBackward
 Set-PSReadlineKeyHandler -Key DownArrow -Function HistorySearchForward
 
