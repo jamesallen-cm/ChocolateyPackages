@@ -99,6 +99,41 @@ function Get-ProgID {
     }
 }
 
+function Get-SIDADUser{
+  param (
+      # Define a mandatory parameter called Path, which will be the path to gather files from
+      [Parameter(Mandatory = $true)]
+      [string] $Domain,
+      [Parameter(Mandatory = $true)]
+      [string] $User
+  )
+  $objUser = New-Object System.Security.Principal.NTAccount($Domain, $User)
+  $strSID = $objUser.Translate([System.Security.Principal.SecurityIdentifier])
+  $strSID.Value
+}
+
+function Get-SIDLocalUser{
+  param (
+      # Define a mandatory parameter called Path, which will be the path to gather files from
+      [Parameter(Mandatory = $true)]
+      [string] $User
+  )
+  $objUser = New-Object System.Security.Principal.NTAccount($User)
+  $strSID = $objUser.Translate([System.Security.Principal.SecurityIdentifier])
+  $strSID.Value
+}
+
+function Get-SIDToUser{
+  param (
+      # Define a mandatory parameter called Path, which will be the path to gather files from
+      [Parameter(Mandatory = $true)]
+      [string] $SID
+  )
+  $objSID = New-Object System.Security.Principal.SecurityIdentifier ($SID)
+  $objUser = $objSID.Translate( [System.Security.Principal.NTAccount])
+  $objUser.Value
+}
+
 # allows you to start a new instance of powershell with no user profile active
 function Start-PowerShell {
     param (
@@ -119,7 +154,7 @@ function Connect-NetworkShare
   $cred = Get-Credential
   $net = new-object -ComObject WScript.Network
   $user = $cred.UserName.split("\") | Select-Object -Last 1
-  $sharePath = "\\somesharepath
+  $sharePath = "\\somesharepath"
   Write-Host $sharePath
   $net.MapNetworkDrive("M:", $sharePath, $false, $cred.UserName, $cred.GetNetworkCredential().Password)
 }
